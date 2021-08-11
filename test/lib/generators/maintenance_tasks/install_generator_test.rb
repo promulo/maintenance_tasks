@@ -44,7 +44,18 @@ module MaintenanceTasks
 
       Dir.chdir(SAMPLE_APP_PATH) do
         FileUtils.rm_r("db")
+        prepare_database_if_postgres
       end
+    end
+
+    def prepare_database_if_postgres
+      return if ENV["DB"] != "postgres"
+
+      FileUtils.copy(
+        "config/sample_app_postgres_database.yml",
+        "config/database.yml"
+      )
+      %x(rails db:drop db:create)
     end
   end
 end
