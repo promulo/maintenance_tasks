@@ -23,6 +23,9 @@ jobs:
     - name: Rails version
       if: ${{ matrix.gemfile == 'gemfiles/rails_edge.gemfile' }}
       run: bundle info rails | head -1
+    - name: Start Postgres
+      run: |
+        sudo systemctl start postgresql.service
     - name: Set up database
       run: RAILS_ENV=test bundle exec rails db:setup
     - name: Ruby Tests
