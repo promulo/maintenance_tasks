@@ -28,6 +28,7 @@ jobs:
     - name: Start Postgres
       if: ${{ matrix.database == 'postgres' }}
       run: |
+        sudo sed -i s/md5/trust/g /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
         echo "DATABASE_URL=postgresql://%2Fvar%2Frun%2Fpostgresql:5432" >> $GITHUB_ENV
     - name: Set up database
