@@ -30,7 +30,7 @@ jobs:
       run: |
         sudo sed -i s/md5/trust/g /etc/postgresql/*/main/pg_hba.conf
         sudo systemctl start postgresql.service
-        echo "DATABASE_URL=postgresql://%2Fvar%2Frun%2Fpostgresql:5432" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgresql://localhost/maintenance_tasks_test" >> $GITHUB_ENV
     - name: Set up database
       run: RAILS_ENV=test bundle exec rails db:setup
     - name: Ruby Tests
