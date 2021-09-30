@@ -9,7 +9,11 @@ gem "mocha"
 gem "pg"
 gem "pry-byebug"
 gem "puma"
-gem "rails", defined?(@rails_gem_requirement) && @rails_gem_requirement
+if defined?(@rails_gem_requirement) && @rails_gem_requirement
+  gem "rails", @rails_gem_requirement
+else
+  gem "rails"
+end
 gem "rubocop"
 gem "rubocop-shopify"
 gem "selenium-webdriver"
