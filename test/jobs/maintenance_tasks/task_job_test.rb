@@ -131,7 +131,7 @@ module MaintenanceTasks
 
       run.expects(:persist_error).with do |exception|
         assert_kind_of ArgumentError, exception
-        assert_equal "Something went wrong", exception.message
+        assert_equal "Something went wrong #{"!" * 255}", exception.message
         expected = "app/tasks/maintenance/error_task.rb:9:in `process'"
         assert_match expected, exception.backtrace.first
       end
