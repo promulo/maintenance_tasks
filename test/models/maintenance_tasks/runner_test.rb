@@ -25,7 +25,7 @@ module MaintenanceTasks
       run = Run.create!(task_name: @name, status: :paused)
 
       assert_no_difference -> { Run.where(task_name: @name).count } do
-        assert_enqueued_with(job: @job, args: [run]) do
+        assert_enqueued_with(job: @job, args: [run: run]) do
           assert_equal Maintenance::UpdatePostsTask, @runner.run(name: @name)
           assert run.reload.enqueued?
         end

@@ -91,7 +91,7 @@ module MaintenanceTasks
         klass.call
       when String
         klass.constantize
-      end.new(run)
+      end.new(run: run)
     end
   end
 end

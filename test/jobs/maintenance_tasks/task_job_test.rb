@@ -13,7 +13,7 @@ module MaintenanceTasks
         @run.pausing!
       end
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_predicate @run.reload, :paused?
       assert_no_enqueued_jobs
@@ -24,7 +24,7 @@ module MaintenanceTasks
         @run.cancelling!
       end
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_predicate @run.reload, :cancelled?
       assert_no_enqueued_jobs
@@ -36,7 +36,7 @@ module MaintenanceTasks
         @run.cancelling!
       end
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal Time.now, @run.reload.ended_at
     end
@@ -46,7 +46,7 @@ module MaintenanceTasks
 
       Maintenance::TestTask.any_instance.expects(:process).never
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_predicate @run.reload, :paused?
       assert_no_enqueued_jobs
@@ -57,7 +57,7 @@ module MaintenanceTasks
 
       Maintenance::TestTask.any_instance.expects(:process).never
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_predicate @run.reload, :cancelled?
       assert_no_enqueued_jobs
@@ -66,7 +66,7 @@ module MaintenanceTasks
     test ".perform_now updates tick_count" do
       Maintenance::TestTask.any_instance.expects(:process).twice
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal 2, @run.reload.tick_count
     end
@@ -75,7 +75,7 @@ module MaintenanceTasks
       JobIteration.stubs(interruption_adapter: -> { true })
       Maintenance::TestTask.any_instance.expects(:process).once
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal 1, @run.reload.tick_count
     end
@@ -86,7 +86,7 @@ module MaintenanceTasks
         @run.cancelling!
       end
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal Time.now, @run.reload.started_at
       assert_equal 2, @run.tick_total
@@ -97,13 +97,13 @@ module MaintenanceTasks
         assert_predicate @run.reload, :running?
       end
 
-      TaskJob.new(@run).perform_now
+      TaskJob.new(run: @run).perform_now
     end
 
     test ".perform_now updates Run to succeeded and persists ended_at when job finishes successfully" do
       freeze_time
       Maintenance::TestTask.any_instance.expects(:process).twice
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal Time.now, @run.reload.ended_at
       assert_predicate @run, :succeeded?
@@ -113,7 +113,7 @@ module MaintenanceTasks
       JobIteration.stubs(interruption_adapter: -> { true })
       Maintenance::TestTask.any_instance.expects(:process).once
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_predicate @run.reload, :interrupted?
     end
@@ -122,7 +122,7 @@ module MaintenanceTasks
       JobIteration.stubs(interruption_adapter: -> { true })
       Maintenance::TestTask.any_instance.expects(:process).once
 
-      assert_enqueued_with(job: TaskJob) { TaskJob.perform_now(@run) }
+      assert_enqueued_with(job: TaskJob) { TaskJob.perform_now(run: @run) }
     end
 
     test ".perform_now updates Run to errored and persists ended_at when exception is raised" do
@@ -136,14 +136,14 @@ module MaintenanceTasks
         assert_match expected, exception.backtrace.first
       end
 
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now handles when the Task cannot be found" do
       run = Run.new(task_name: "Maintenance::DeletedTask")
       run.save(validate: false)
 
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_equal "MaintenanceTasks::Task::NotFoundError", run.error_class
       assert_equal "Task Maintenance::DeletedTask not found.", run.error_message
@@ -155,7 +155,7 @@ module MaintenanceTasks
       run.running! # the Task existed when the run started
       run.interrupted! # but not after interruption
 
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_equal "MaintenanceTasks::Task::NotFoundError", run.error_class
       assert_equal "Task Maintenance::DeletedTask not found.", run.error_message
@@ -171,7 +171,7 @@ module MaintenanceTasks
           attr_accessor :times_interrupted
         end
       end
-      AnotherTaskJob.perform_now(@run)
+      AnotherTaskJob.perform_now(run: @run)
 
       # The job should not yet have been reenqueued, so times_interrupted should
       # be 0
@@ -182,7 +182,7 @@ module MaintenanceTasks
     test ".perform_now does not enqueue another job if Run errors" do
       run = Run.create!(task_name: "Maintenance::ErrorTask")
 
-      assert_no_enqueued_jobs { TaskJob.perform_now(run) }
+      assert_no_enqueued_jobs { TaskJob.perform_now(run: run) }
     end
 
     test ".perform_now updates tick_count when job is errored" do
@@ -190,7 +190,7 @@ module MaintenanceTasks
         .returns(nil)
         .raises(ArgumentError)
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal 1, @run.reload.tick_count
     end
@@ -200,7 +200,7 @@ module MaintenanceTasks
         @run.pausing!
       end
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_equal 0, @run.reload.cursor
     end
@@ -210,14 +210,14 @@ module MaintenanceTasks
 
       Maintenance::TestTask.any_instance.expects(:process).once.with(2)
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
     end
 
     test ".perform_now accepts Active Record Relations as collection" do
       Maintenance::TestTask.any_instance.stubs(collection: Post.all)
       Maintenance::TestTask.any_instance.expects(:process).times(Post.count)
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
 
       assert_predicate @run.reload, :succeeded?
     end
@@ -230,7 +230,7 @@ module MaintenanceTasks
         { io: File.open(file_fixture("sample.csv")), filename: "sample.csv" }
       )
       run.save
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_predicate run.reload, :succeeded?
     end
@@ -239,7 +239,7 @@ module MaintenanceTasks
       freeze_time
       Maintenance::TestTask.any_instance.stubs(collection: "not a collection")
 
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
       @run.reload
 
       assert_predicate @run, :errored?
@@ -257,7 +257,7 @@ module MaintenanceTasks
     test ".perform_now sets the Run as errored when the Task collection is not defined" do
       collection_method = Maintenance::TestTask.instance_method(:collection)
       Maintenance::TestTask.remove_method(:collection)
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
       @run.reload
       assert_predicate(@run, :errored?)
     ensure
@@ -267,7 +267,7 @@ module MaintenanceTasks
     test ".perform_now sets the Run as errored when the Task process is not defined" do
       collection_method = Maintenance::TestTask.instance_method(:process)
       Maintenance::TestTask.remove_method(:process)
-      TaskJob.perform_now(@run)
+      TaskJob.perform_now(run: @run)
       @run.reload
       assert_predicate(@run, :errored?)
     ensure
@@ -294,7 +294,7 @@ module MaintenanceTasks
 
       run = Run.create!(task_name: "Maintenance::ErrorTask")
 
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_equal(ArgumentError, handled_error.class)
       assert_equal("Maintenance::ErrorTask", handled_task_context[:task_name])
@@ -310,7 +310,7 @@ module MaintenanceTasks
       end
       run = Run.create!(task_name: "Maintenance::ErrorTask")
 
-      assert_raises { TaskJob.perform_now(run) }
+      assert_raises { TaskJob.perform_now(run: run) }
       run.reload
 
       assert_predicate(run, :errored?)
@@ -332,7 +332,7 @@ module MaintenanceTasks
         before_perform(prepend: true) { raise "Uh oh!" }
       end
 
-      RaisingTaskJob.perform_now(@run)
+      RaisingTaskJob.perform_now(run: @run)
 
       assert_equal("Uh oh!", handled_error.message)
       assert_empty(handled_task_context)
@@ -343,7 +343,7 @@ module MaintenanceTasks
     test ".perform_now throttles when running Task that uses throttle_on" do
       Maintenance::UpdatePostsThrottledTask.throttle = true
       run = Run.create!(task_name: "Maintenance::UpdatePostsThrottledTask")
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_predicate run.reload, :interrupted?
 
@@ -366,7 +366,7 @@ module MaintenanceTasks
         task_name: "Maintenance::ParamsTask",
         arguments: { post_ids: post.id.to_s }
       )
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_predicate run.reload, :succeeded?
     end
@@ -379,7 +379,7 @@ module MaintenanceTasks
       Maintenance::UpdatePostsInBatchesTask.any_instance.expects(:process).twice
 
       run = Run.create!(task_name: "Maintenance::UpdatePostsInBatchesTask")
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       run.reload
       assert_equal 2, run.tick_total
@@ -393,7 +393,7 @@ module MaintenanceTasks
         .expects(:collection).returns(batch_enumerator)
 
       run = Run.create!(task_name: "Maintenance::UpdatePostsInBatchesTask")
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_predicate run.reload, :errored?
       assert_equal "ArgumentError", run.error_class
@@ -408,7 +408,7 @@ module MaintenanceTasks
       run = Run.create!(task_name: "Maintenance::CallbackTestTask")
 
       Maintenance::CallbackTestTask.any_instance.expects(:after_start_callback)
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now runs task's complete callback" do
@@ -420,14 +420,14 @@ module MaintenanceTasks
         .any_instance
         .expects(:after_complete_callback)
         .never
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       # Let task complete, expect complete callback
       JobIteration.stubs(interruption_adapter: -> { false })
       Maintenance::CallbackTestTask
         .any_instance
         .expects(:after_complete_callback)
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now runs task's pause callback" do
@@ -438,7 +438,7 @@ module MaintenanceTasks
       end
 
       Maintenance::CallbackTestTask.any_instance.expects(:after_pause_callback)
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now runs task's interrupt callback" do
@@ -449,7 +449,7 @@ module MaintenanceTasks
       Maintenance::CallbackTestTask
         .any_instance
         .expects(:after_interrupt_callback)
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now runs task's cancel callback" do
@@ -459,7 +459,7 @@ module MaintenanceTasks
       end
 
       Maintenance::CallbackTestTask.any_instance.expects(:after_cancel_callback)
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now runs task's error callback" do
@@ -468,7 +468,7 @@ module MaintenanceTasks
         .raises(ArgumentError)
 
       Maintenance::CallbackTestTask.any_instance.expects(:after_error_callback)
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
     end
 
     test ".perform_now calls the error handler even if a task's on_error callback raises an exception" do
@@ -489,7 +489,7 @@ module MaintenanceTasks
         handled_error = error
       end
 
-      TaskJob.perform_now(run)
+      TaskJob.perform_now(run: run)
 
       assert_equal("Task process failed!", handled_error.message)
     ensure
