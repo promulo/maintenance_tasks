@@ -30,6 +30,7 @@ module MaintenanceTasks
         "Maintenance::ParamsTask",
         "Maintenance::TestTask",
         "Maintenance::UpdatePostsInBatchesTask",
+        "Maintenance::UpdatePostsSorbetTask",
         "Maintenance::UpdatePostsTask",
         "Maintenance::UpdatePostsThrottledTask",
       ]
@@ -48,6 +49,13 @@ module MaintenanceTasks
 
       assert_equal "class UpdatePostsTask < MaintenanceTasks::Task",
         task_data.code.each_line.grep(/UpdatePostsTask/).first.squish
+    end
+
+    test "#code returns the code source of a Sorbet-annotated Task" do
+      task_data = TaskData.new("Maintenance::UpdatePostsSorbetTask")
+
+      assert_equal "class UpdatePostsSorbetTask < MaintenanceTasks::Task",
+        task_data.code.each_line.grep(/UpdatePostsSorbetTask/).first.squish
     end
 
     test "#code returns nil if the Task does not exist" do

@@ -19,6 +19,8 @@ end
 gem "rubocop"
 gem "rubocop-shopify", "2.3.0"
 gem "selenium-webdriver"
+gem "sorbet", group: :development
+gem "sorbet-runtime"
 gem "sqlite3"
 gem "webdrivers", require: false
 gem "yard"
